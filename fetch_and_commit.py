@@ -10,9 +10,9 @@ SOURCES_FILE = 'sources.txt'
 DATA_DIR = Path('data')
 README_FILE = 'README.md'
 MAX_WORKERS = 8
-CHUNK_SIZE = 16 * 1024 
+CHUNK_SIZE = 16 * 1024  
 
-RAW_BASE = "https://github.com/Lorax121/everyday_epg_update/raw/main/data/"
+RAW_BASE = "https://github.com/{owner}/{repo}/raw/main/data/"
 
 
 def read_sources():
@@ -40,14 +40,18 @@ def clear_data_dir():
         DATA_DIR.mkdir(parents=True)
 
 
+def strip_all_suffixes(filename: str) -> str:
+    return filename.split('.')[0]
+
+
 def detect_extension(file_path, url):
     with open(file_path, 'rb') as f:
-        sig = f.read(4)
+        sig = f.read(5)
     # GZIP header: 1f 8b
     if sig[:2] == b"\x1f\x8b":
         return '.xml.gz'
     # XML: starts with '<?xml'
-    if sig.startswith(b'<?xm'):
+    if sig.startswith(b'<?xml'):
         return '.xml'
     # fallback: из URL
     suffixes = Path(urlparse(url).path).suffixes
@@ -67,7 +71,9 @@ def download_one(entry, raw_prefix):
                     if chunk:
                         f.write(chunk)
         ext = detect_extension(temp, url)
-        base = Path(urlparse(url).path).stem or "file"
+        url_path = urlparse(url).path
+        raw_name = Path(url_path).name
+        base = strip_all_suffixes(raw_name) or "file"
         filename = f"{base}{ext}"
         target = DATA_DIR / filename
         temp.rename(target)
@@ -113,6 +119,7 @@ def main():
         futures = {ex.submit(download_one, e, raw_prefix): e for e in entries}
         for f in as_completed(futures):
             results.append(f.result())
+
     url_to_res = {r['url']: r for r in results}
     ordered = [url_to_res[e['url']] for e in entries]
 
