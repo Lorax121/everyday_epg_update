@@ -53,7 +53,7 @@ def download(entry):
 
 def update_readme(entries):
     today = datetime.utcnow().date().isoformat()
-    header = f"Обновлено: {today}
+    header = f"Обновлено: {today}"
 
 "
     lines = []
