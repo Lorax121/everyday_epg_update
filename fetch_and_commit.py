@@ -1,3 +1,4 @@
+
 import os
 import sys
 import json
@@ -46,6 +47,17 @@ def clear_data_dir():
         DATA_DIR.mkdir(parents=True)
 
 
+def detect_extension(file_path, url):
+    with open(file_path, 'rb') as f:
+        sig = f.read(5)
+    if sig[:2] == b"\x1f\x8b":
+        return '.xml.gz'
+    if sig.startswith(b'<?xml'):
+        return '.xml'
+    suffixes = Path(urlparse(url).path).suffixes
+    return ''.join(suffixes) 
+
+
 def download_one(entry):
     url = entry['url']
     desc = entry['desc']
@@ -71,8 +83,12 @@ def download_one(entry):
             temp_path.unlink()
             return result
 
+        true_extension = detect_extension(temp_path, url)
 
-        proposed_filename = Path(urlparse(url).path).name or "downloaded_file"
+        filename_from_url = Path(urlparse(url).path).name or "download"
+
+        base_name = filename_from_url.split('.')[0]
+        proposed_filename = f"{base_name}{true_extension}"
         
         result.update({
             'size_mb': size_mb,
@@ -98,6 +114,7 @@ def shorten_url_safely(url):
         short_tuple = shortener.shorten(url)
         return short_tuple[0] if short_tuple and short_tuple[0] else "не удалось сократить"
     except Exception as e:
+        print(f"Не удалось сократить URL {url}: {e}", file=sys.stderr)
         return "не удалось сократить"
 
 def update_readme(results, notes):
@@ -108,12 +125,9 @@ def update_readme(results, notes):
 
     if notes:
         lines.append(notes)
-        lines.append("")
-        lines.append("---")
-        lines.append("")
+        lines.append("\n---")
     
-    lines.append(f"# Обновлено: {timestamp}")
-    lines.append("")
+    lines.append(f"\n# Обновлено: {timestamp}\n")
 
     for idx, r in enumerate(results, 1):
         lines.append(f"### {idx}. {r['desc']}")
@@ -131,9 +145,7 @@ def update_readme(results, notes):
             lines.append(f"- **CDN ссылка (jsDelivr):**")
             lines.append(f"  - `{r['jsdelivr_url']}`")
             lines.append(f"  - Короткая: `{r['short_jsdelivr_url']}`")
-        lines.append("")
-        lines.append("---")
-        lines.append("")
+        lines.append("\n---")
 
     with open(README_FILE, 'w', encoding='utf-8') as f:
         f.write("\n".join(lines))
@@ -191,6 +203,7 @@ def main():
         final_results.append(res)
 
     update_readme(final_results, notes)
+    print("Скрипт успешно завершил работу.")
 
 
 if __name__ == '__main__':
