@@ -15,6 +15,7 @@ README_FILE = 'README.md'
 MAX_WORKERS = 8
 CHUNK_SIZE = 16 * 1024
 MAX_FILE_SIZE_MB = 95
+JSDELIVR_SIZE_LIMIT_MB = 20 
 
 RAW_BASE_URL = "https://github.com/{owner}/{repo}/raw/main/data/{filename}"
 JSDELIVR_BASE_URL = "https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/data/{filename}"
@@ -55,16 +56,14 @@ def detect_extension(file_path, url):
     if sig.startswith(b'<?xml'):
         return '.xml'
     suffixes = Path(urlparse(url).path).suffixes
-    return ''.join(suffixes) 
+    return ''.join(suffixes)
 
 
 def download_one(entry):
     url = entry['url']
     desc = entry['desc']
     temp_path = DATA_DIR / ("tmp_" + os.urandom(4).hex())
-    
     result = {'desc': desc, 'url': url, 'error': None}
-
     try:
         print(f"Начинаю загрузку: {desc} ({url})")
         with requests.get(url, stream=True, timeout=120) as r:
@@ -72,36 +71,28 @@ def download_one(entry):
             with open(temp_path, 'wb') as f:
                 for chunk in r.iter_content(CHUNK_SIZE):
                     f.write(chunk)
-        
         size_bytes = temp_path.stat().st_size
         size_mb = round(size_bytes / (1024 * 1024), 2)
-        
         if size_bytes > MAX_FILE_SIZE_MB * 1024 * 1024:
             error_msg = f"Файл слишком большой ({size_mb} MB > {MAX_FILE_SIZE_MB} MB). Пропускаем."
             print(error_msg)
             result['error'] = error_msg
             temp_path.unlink()
             return result
-
         true_extension = detect_extension(temp_path, url)
-
         filename_from_url = Path(urlparse(url).path).name or "download"
-
         base_name = filename_from_url.split('.')[0]
         proposed_filename = f"{base_name}{true_extension}"
-        
         result.update({
             'size_mb': size_mb,
             'temp_path': temp_path,
             'proposed_filename': proposed_filename
         })
         return result
-
     except requests.exceptions.RequestException as e:
         result['error'] = f"Ошибка загрузки: {e}"
     except Exception as e:
         result['error'] = f"Неизвестная ошибка: {e}"
-        
     print(f"Ошибка для {desc}: {result['error']}")
     if temp_path.exists():
         temp_path.unlink()
@@ -116,6 +107,7 @@ def shorten_url_safely(url):
     except Exception as e:
         print(f"Не удалось сократить URL {url}: {e}", file=sys.stderr)
         return "не удалось сократить"
+
 
 def update_readme(results, notes):
     utc_now = datetime.now(timezone.utc)
@@ -142,9 +134,14 @@ def update_readme(results, notes):
             lines.append(f"- **Прямая ссылка (GitHub Raw):**")
             lines.append(f"  - `{r['raw_url']}`")
             lines.append(f"  - Короткая: `{r['short_raw_url']}`")
-            lines.append(f"- **CDN ссылка (jsDelivr):**")
-            lines.append(f"  - `{r['jsdelivr_url']}`")
-            lines.append(f"  - Короткая: `{r['short_jsdelivr_url']}`")
+            
+            if r.get('jsdelivr_url'):
+                lines.append(f"- **CDN ссылка (jsDelivr):**")
+                lines.append(f"  - `{r['jsdelivr_url']}`")
+                lines.append(f"  - Короткая: `{r['short_jsdelivr_url']}`")
+            else:
+                lines.append(f"- **CDN ссылка (jsDelivr):** `Файл слишком большой (>{JSDELIVR_SIZE_LIMIT_MB} MB)`")
+
         lines.append("\n---")
 
     with open(README_FILE, 'w', encoding='utf-8') as f:
@@ -193,12 +190,13 @@ def main():
         res['temp_path'].rename(target_path)
         
         raw_url = RAW_BASE_URL.format(owner=owner, repo=repo_name, filename=final_name)
-        jsdelivr_url = JSDELIVR_BASE_URL.format(owner=owner, repo=repo_name, filename=final_name)
-        
         res['raw_url'] = raw_url
-        res['jsdelivr_url'] = jsdelivr_url
         res['short_raw_url'] = shorten_url_safely(raw_url)
-        res['short_jsdelivr_url'] = shorten_url_safely(jsdelivr_url)
+        
+        if res['size_mb'] < JSDELIVR_SIZE_LIMIT_MB:
+            jsdelivr_url = JSDELIVR_BASE_URL.format(owner=owner, repo=repo_name, filename=final_name)
+            res['jsdelivr_url'] = jsdelivr_url
+            res['short_jsdelivr_url'] = shorten_url_safely(jsdelivr_url)
         
         final_results.append(res)
 
