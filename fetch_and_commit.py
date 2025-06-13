@@ -20,8 +20,6 @@ JSDELIVR_SIZE_LIMIT_MB = 15
 RAW_BASE_URL = "https://github.com/{owner}/{repo}/raw/main/data/{filename}"
 JSDELIVR_BASE_URL = "https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/data/{filename}"
 
-
-
 def read_sources_and_notes():
     try:
         with open(SOURCES_FILE, 'r', encoding='utf-8') as f:
@@ -134,10 +132,10 @@ def update_readme(results, notes):
 
             lines.append("> **Альтернативные ссылки:**")
             lines.append(">") 
-            lines.append(f"> - *Короткая (is.gd):* `{r['short_raw_url']}`")
+            lines.append(f"> - *Короткая (некоторые плееры не поддерживают):* `{r['short_raw_url']}`")
             
             if r.get('jsdelivr_url'):
-                lines.append(f"> - *CDN (jsDelivr):* `{r['jsdelivr_url']}` (Короткая: `{r['short_jsdelivr_url']}`)")
+                lines.append(f"> - *CDN (jsDelivr):* `{r['jsdelivr_url']}` (Короткая (некоторые плееры не поддерживают): `{r['short_jsdelivr_url']}`)")
 
         lines.append("\n---")
 
