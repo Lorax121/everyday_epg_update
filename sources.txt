@@ -1,4 +1,0 @@
-http://epg.one/epg2.xml.gz |  основной файл epg.one EPG с прямоугольными пиконами с прозрачным фоном
-http://epg.one/epg.xml |  облегченный файл epg.one EPG с квадратными иконками с темным фоном
-https://iptvx.one/EPG |  основной файл iptvx.one (архив на 14 дней / описания)
-https://iptvx.one/EPG_LITE |  облегченный файл iptvx.one (архив на 14 дней / без описаний)
