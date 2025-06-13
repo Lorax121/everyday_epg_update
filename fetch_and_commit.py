@@ -15,10 +15,11 @@ README_FILE = 'README.md'
 MAX_WORKERS = 8
 CHUNK_SIZE = 16 * 1024
 MAX_FILE_SIZE_MB = 95
-JSDELIVR_SIZE_LIMIT_MB = 20 
+JSDELIVR_SIZE_LIMIT_MB = 15
 
 RAW_BASE_URL = "https://github.com/{owner}/{repo}/raw/main/data/{filename}"
 JSDELIVR_BASE_URL = "https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/data/{filename}"
+
 
 
 def read_sources_and_notes():
@@ -38,7 +39,6 @@ def read_sources_and_notes():
         print(f"Ошибка: Некорректный формат JSON в файле {SOURCES_FILE}.", file=sys.stderr)
         sys.exit(1)
 
-
 def clear_data_dir():
     if DATA_DIR.exists():
         for f in DATA_DIR.iterdir():
@@ -46,7 +46,6 @@ def clear_data_dir():
                 f.unlink()
     else:
         DATA_DIR.mkdir(parents=True)
-
 
 def detect_extension(file_path, url):
     with open(file_path, 'rb') as f:
@@ -57,7 +56,6 @@ def detect_extension(file_path, url):
         return '.xml'
     suffixes = Path(urlparse(url).path).suffixes
     return ''.join(suffixes)
-
 
 def download_one(entry):
     url = entry['url']
@@ -98,7 +96,6 @@ def download_one(entry):
         temp_path.unlink()
     return result
 
-
 def shorten_url_safely(url):
     try:
         shortener = gdshortener.ISGDShortener()
@@ -107,7 +104,6 @@ def shorten_url_safely(url):
     except Exception as e:
         print(f"Не удалось сократить URL {url}: {e}", file=sys.stderr)
         return "не удалось сократить"
-
 
 def update_readme(results, notes):
     utc_now = datetime.now(timezone.utc)
@@ -131,16 +127,17 @@ def update_readme(results, notes):
         else:
             lines.append(f"**Размер:** {r['size_mb']} MB")
             lines.append("")
-            lines.append(f"- **Прямая ссылка (GitHub Raw):**")
-            lines.append(f"  - `{r['raw_url']}`")
-            lines.append(f"  - Короткая: `{r['short_raw_url']}`")
+            
+            lines.append(f"**Основная ссылка (GitHub Raw):**")
+            lines.append(f"`{r['raw_url']}`")
+            lines.append("")
+
+            lines.append("> **Альтернативные ссылки:**")
+            lines.append(">") 
+            lines.append(f"> - *Короткая (is.gd):* `{r['short_raw_url']}`")
             
             if r.get('jsdelivr_url'):
-                lines.append(f"- **CDN ссылка (jsDelivr):**")
-                lines.append(f"  - `{r['jsdelivr_url']}`")
-                lines.append(f"  - Короткая: `{r['short_jsdelivr_url']}`")
-            else:
-                lines.append(f"- **CDN ссылка (jsDelivr):** `Файл слишком большой (>{JSDELIVR_SIZE_LIMIT_MB} MB)`")
+                lines.append(f"> - *CDN (jsDelivr):* `{r['jsdelivr_url']}` (Короткая: `{r['short_jsdelivr_url']}`)")
 
         lines.append("\n---")
 
