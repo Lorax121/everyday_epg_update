@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import re
 import requests
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,20 +19,6 @@ RAW_BASE_URL = "https://github.com/{owner}/{repo}/raw/main/data/{filename}"
 JSDELIVR_BASE_URL = "https://cdn.jsdelivr.net/gh/{owner}/{repo}@main/data/{filename}"
 
 
-def slugify(text: str) -> str:
-    rus_to_eng = {
-        'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo', 'ж': 'zh',
-        'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o',
-        'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts',
-        'ч': 'ch', 'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e', 'ю': 'yu', 'я': 'ya'
-    }
-    text = text.lower()
-    slug = ''.join(rus_to_eng.get(char, char) for char in text)
-    slug = re.sub(r'[^\w\s-]', '', slug).strip()
-    slug = re.sub(r'[-\s]+', '-', slug)
-    return slug or "unnamed"
-
-
 def read_sources_and_notes():
     try:
         with open(SOURCES_FILE, 'r', encoding='utf-8') as f:
@@ -41,14 +26,14 @@ def read_sources_and_notes():
             sources = config.get('sources', [])
             notes = config.get('notes', '')
             if not sources:
+                print("Ошибка: в sources.json не найдено ни одного источника в ключе 'sources'.", file=sys.stderr)
                 sys.exit(1)
-            descriptions = [s['desc'] for s in sources]
-            if len(descriptions) != len(set(descriptions)):
-                 sys.exit(1)
             return sources, notes
     except FileNotFoundError:
+        print(f"Ошибка: Файл {SOURCES_FILE} не найден.", file=sys.stderr)
         sys.exit(1)
     except json.JSONDecodeError:
+        print(f"Ошибка: Некорректный формат JSON в файле {SOURCES_FILE}.", file=sys.stderr)
         sys.exit(1)
 
 
@@ -61,26 +46,7 @@ def clear_data_dir():
         DATA_DIR.mkdir(parents=True)
 
 
-def detect_extension(file_path, url):
-    with open(file_path, 'rb') as f:
-        sig = f.read(5)
-    if sig[:2] == b"\x1f\x8b":
-        return '.xml.gz'
-    if sig.startswith(b'<?xml'):
-        return '.xml'
-    suffixes = Path(urlparse(url).path).suffixes
-    return ''.join(suffixes) if suffixes else '.dat'
-
-
-def shorten_url(url):
-    try:
-        shortener = gdshortener.ISGDShortener()
-        return shortener.shorten(url)
-    except Exception as e:
-        return "не удалось сократить"
-
-
-def download_one(entry, url_templates):
+def download_one(entry):
     url = entry['url']
     desc = entry['desc']
     temp_path = DATA_DIR / ("tmp_" + os.urandom(4).hex())
@@ -88,6 +54,7 @@ def download_one(entry, url_templates):
     result = {'desc': desc, 'url': url, 'error': None}
 
     try:
+        print(f"Начинаю загрузку: {desc} ({url})")
         with requests.get(url, stream=True, timeout=120) as r:
             r.raise_for_status()
             with open(temp_path, 'wb') as f:
@@ -104,49 +71,50 @@ def download_one(entry, url_templates):
             temp_path.unlink()
             return result
 
-        ext = detect_extension(temp_path, url)
-        base_name = slugify(desc)
-        filename = f"{base_name}{ext}"
-        target_path = DATA_DIR / filename
-        temp_path.rename(target_path)
 
-
-        raw_url = url_templates['raw'].format(filename=filename)
-        jsdelivr_url = url_templates['jsdelivr'].format(filename=filename)
+        proposed_filename = Path(urlparse(url).path).name or "downloaded_file"
         
-        with ThreadPoolExecutor(max_workers=2) as shortener_executor:
-            future_raw = shortener_executor.submit(shorten_url, raw_url)
-            future_jsdelivr = shortener_executor.submit(shorten_url, jsdelivr_url)
-            
-            short_raw_url = future_raw.result()
-            short_jsdelivr_url = future_jsdelivr.result()
-
         result.update({
             'size_mb': size_mb,
-            'raw_url': raw_url,
-            'jsdelivr_url': jsdelivr_url,
-            'short_raw_url': short_raw_url,
-            'short_jsdelivr_url': short_jsdelivr_url,
+            'temp_path': temp_path,
+            'proposed_filename': proposed_filename
         })
         return result
 
     except requests.exceptions.RequestException as e:
         result['error'] = f"Ошибка загрузки: {e}"
-        if temp_path.exists():
-            temp_path.unlink()
-        return result
     except Exception as e:
         result['error'] = f"Неизвестная ошибка: {e}"
-        if temp_path.exists():
-            temp_path.unlink()
-        return result
+        
+    print(f"Ошибка для {desc}: {result['error']}")
+    if temp_path.exists():
+        temp_path.unlink()
+    return result
 
+
+def shorten_url_safely(url):
+    try:
+        shortener = gdshortener.ISGDShortener()
+        short_tuple = shortener.shorten(url)
+        return short_tuple[0] if short_tuple and short_tuple[0] else "не удалось сократить"
+    except Exception as e:
+        return "не удалось сократить"
 
 def update_readme(results, notes):
     utc_now = datetime.now(timezone.utc)
     timestamp = utc_now.strftime('%Y-%m-%d %H:%M %Z')
     
-    lines = [f"# Обновлено: {timestamp}", ""]
+    lines = []
+
+    if notes:
+        lines.append(notes)
+        lines.append("")
+        lines.append("---")
+        lines.append("")
+    
+    lines.append(f"# Обновлено: {timestamp}")
+    lines.append("")
+
     for idx, r in enumerate(results, 1):
         lines.append(f"### {idx}. {r['desc']}")
         lines.append("")
@@ -155,7 +123,6 @@ def update_readme(results, notes):
             lines.append(f"**Источник:** `{r['url']}`")
             lines.append(f"**Причина:** {r.get('error')}")
         else:
-            lines.append(f"**Статус:** 🟢 Успешно")
             lines.append(f"**Размер:** {r['size_mb']} MB")
             lines.append("")
             lines.append(f"- **Прямая ссылка (GitHub Raw):**")
@@ -168,12 +135,6 @@ def update_readme(results, notes):
         lines.append("---")
         lines.append("")
 
-    if notes:
-        lines.append("## Примечания")
-        lines.append("")
-        lines.append(notes)
-        lines.append("")
-
     with open(README_FILE, 'w', encoding='utf-8') as f:
         f.write("\n".join(lines))
     print(f"README.md обновлён ({len(results)} записей)")
@@ -182,28 +143,54 @@ def update_readme(results, notes):
 def main():
     repo = os.getenv('GITHUB_REPOSITORY')
     if not repo or '/' not in repo:
+        print("Ошибка: не удалось определить GITHUB_REPOSITORY.", file=sys.stderr)
         sys.exit(1)
     
     owner, repo_name = repo.split('/')
     
-    url_templates = {
-        'raw': RAW_BASE_URL.format(owner=owner, repo=repo_name, filename="{filename}"),
-        'jsdelivr': JSDELIVR_BASE_URL.format(owner=owner, repo=repo_name, filename="{filename}")
-    }
-
     sources, notes = read_sources_and_notes()
     clear_data_dir()
 
-    all_results = []
+    temp_results = []
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-        future_to_entry = {executor.submit(download_one, entry, url_templates): entry for entry in sources}
+        future_to_entry = {executor.submit(download_one, entry): entry for entry in sources}
         for future in as_completed(future_to_entry):
-            all_results.append(future.result())
+            temp_results.append(future.result())
 
-    url_to_result = {res['url']: res for res in all_results}
+    url_to_result = {res['url']: res for res in temp_results}
     ordered_results = [url_to_result[s['url']] for s in sources]
 
-    update_readme(ordered_results, notes)
+    final_results = []
+    used_names = set()
+    for res in ordered_results:
+        if res.get('error'):
+            final_results.append(res)
+            continue
+
+        original_name = res['proposed_filename']
+        final_name = original_name
+        counter = 1
+        while final_name in used_names:
+            p = Path(original_name)
+            final_name = f"{p.stem}-{counter}{p.suffix}"
+            counter += 1
+        
+        used_names.add(final_name)
+        
+        target_path = DATA_DIR / final_name
+        res['temp_path'].rename(target_path)
+        
+        raw_url = RAW_BASE_URL.format(owner=owner, repo=repo_name, filename=final_name)
+        jsdelivr_url = JSDELIVR_BASE_URL.format(owner=owner, repo=repo_name, filename=final_name)
+        
+        res['raw_url'] = raw_url
+        res['jsdelivr_url'] = jsdelivr_url
+        res['short_raw_url'] = shorten_url_safely(raw_url)
+        res['short_jsdelivr_url'] = shorten_url_safely(jsdelivr_url)
+        
+        final_results.append(res)
+
+    update_readme(final_results, notes)
 
 
 if __name__ == '__main__':
