@@ -12,11 +12,11 @@
 
 ---
 
-# Обновлено: 2025-06-14 14:34 UTC
+# Обновлено: 2025-06-15 00:56 UTC
 
 ### 1. основной файл epg.one EPG с прямоугольными пиконами с прозрачным фоном
 
-**Размер:** 43.63 MB
+**Размер:** 41.87 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/epg2.xml.gz`
@@ -28,7 +28,7 @@
 ---
 ### 2. основной файл epg.one EPG с квадратными пиконами с темным фоном
 
-**Размер:** 43.63 MB
+**Размер:** 41.87 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/epg.xml.gz`
@@ -40,7 +40,7 @@
 ---
 ### 3. облегченный файл epg.one EPG с квадратными иконками с темным фоном
 
-**Размер:** 9.55 MB
+**Размер:** 9.44 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/epg.xml`
