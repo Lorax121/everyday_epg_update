@@ -14,67 +14,67 @@
 
 ---
 
-# Обновлено: 2026-04-12 01:23 UTC
+# Обновлено: 2026-04-13 01:24 UTC
 
 ### 1. основной файл epg.one EPG с прямоугольными пиконами с прозрачным фоном
 
-**Размер:** 40.44 MB
+**Размер:** 41.54 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/epg2.xml.gz`
 
 > **Альтернативные ссылки:**
 >
-> - *Короткая (некоторые плееры не поддерживают):* `https://is.gd/MC95eU`
+> - *Короткая (некоторые плееры не поддерживают):* `не удалось сократить`
 
 ---
 ### 2. основной файл epg.one EPG с квадратными пиконами с темным фоном
 
-**Размер:** 40.44 MB
+**Размер:** 41.54 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/epg.xml.gz`
 
 > **Альтернативные ссылки:**
 >
-> - *Короткая (некоторые плееры не поддерживают):* `https://is.gd/dEf55Q`
+> - *Короткая (некоторые плееры не поддерживают):* `не удалось сократить`
 
 ---
 ### 3. облегченный файл epg.one EPG с квадратными иконками с темным фоном
 
-**Размер:** 9.88 MB
+**Размер:** 8.59 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/epg.xml`
 
 > **Альтернативные ссылки:**
 >
-> - *Короткая (некоторые плееры не поддерживают):* `https://is.gd/DJDSZy`
-> - *CDN (jsDelivr):* `https://cdn.jsdelivr.net/gh/Lorax121/everyday_epg_update@main/data/epg.xml` (Короткая (некоторые плееры не поддерживают): `https://is.gd/G6TrqM`)
+> - *Короткая (некоторые плееры не поддерживают):* `не удалось сократить`
+> - *CDN (jsDelivr):* `https://cdn.jsdelivr.net/gh/Lorax121/everyday_epg_update@main/data/epg.xml` (Короткая (некоторые плееры не поддерживают): `не удалось сократить`)
 
 ---
 ### 4. укороченный файл iptvx.one (архив на 7 дней / описания)
 
-**Размер:** 67.92 MB
+**Размер:** 64.06 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/EPG7.xml.gz`
 
 > **Альтернативные ссылки:**
 >
-> - *Короткая (некоторые плееры не поддерживают):* `https://is.gd/K7V542`
+> - *Короткая (некоторые плееры не поддерживают):* `не удалось сократить`
 
 ---
 ### 5. облегченный файл iptvx.one (архив на 14 дней / без описаний)
 
-**Размер:** 13.62 MB
+**Размер:** 12.97 MB
 
 **Основная ссылка (GitHub Raw):**
 `https://github.com/Lorax121/everyday_epg_update/raw/main/data/EPG_LITE.xml.gz`
 
 > **Альтернативные ссылки:**
 >
-> - *Короткая (некоторые плееры не поддерживают):* `https://is.gd/wjDzEO`
-> - *CDN (jsDelivr):* `https://cdn.jsdelivr.net/gh/Lorax121/everyday_epg_update@main/data/EPG_LITE.xml.gz` (Короткая (некоторые плееры не поддерживают): `https://is.gd/iVmrXw`)
+> - *Короткая (некоторые плееры не поддерживают):* `не удалось сократить`
+> - *CDN (jsDelivr):* `https://cdn.jsdelivr.net/gh/Lorax121/everyday_epg_update@main/data/EPG_LITE.xml.gz` (Короткая (некоторые плееры не поддерживают): `не удалось сократить`)
 
 ---
